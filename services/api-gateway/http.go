@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"ride-sharing/shared/contracts"
 
 	"encoding/json"
 )
@@ -24,9 +23,22 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO: Call trip service
 
-	response := contracts.APIResponse{}
+	response, err := http.NewRequest("POST", "http://trip-service:8083/preview", nil)
+	if err != nil {
+		http.Error(w, "Failed to create request to trip service", http.StatusInternalServerError)
+		return
+	}
 
-	if err := writeJSON(w, http.StatusOK, response); err != nil {
+	client := &http.Client{}
+	resp, err := client.Do(response)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Println(err)
+		http.Error(w, "Failed to get preview from trip service", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if err := writeJSON(w, http.StatusOK, resp.Body); err != nil {
 		log.Println("Failed to write JSON response:", err)
 	}
 }
