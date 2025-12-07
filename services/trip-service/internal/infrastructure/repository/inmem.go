@@ -6,14 +6,14 @@ import (
 )
 
 type inmemRepository struct {
-	trips    map[string]*domain.TripModel
-	ridefare map[string]*domain.RideFareModel
+	trips     map[string]*domain.TripModel
+	rideFares map[string]*domain.RideFareModel
 }
 
 func NewInmemRepository() *inmemRepository {
 	return &inmemRepository{
-		trips:    make(map[string]*domain.TripModel),
-		ridefare: make(map[string]*domain.RideFareModel),
+		trips:     make(map[string]*domain.TripModel),
+		rideFares: make(map[string]*domain.RideFareModel),
 	}
 }
 
