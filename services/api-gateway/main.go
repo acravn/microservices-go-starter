@@ -31,7 +31,7 @@ func main() {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("API Gateway listening on %s", httpAddr)
+		log.Printf("Server listening on %s", httpAddr)
 		serverErrors <- server.ListenAndServe()
 	}()
 
@@ -40,18 +40,17 @@ func main() {
 
 	select {
 	case err := <-serverErrors:
-		log.Fatalf("Error starting the Server error: %v", err)
+		log.Printf("Error starting the server: %v", err)
+
 	case sig := <-shutdown:
-		log.Printf("Starting shutdown: %v", sig)
+		log.Printf("Server is shutting down due to %v signal", sig)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("Graceful shutdown did not complete in 10s : %v", err)
-			if err := server.Close(); err != nil {
-				log.Printf("Could not stop server : %v", err)
-			}
+			log.Printf("Could not stop the server gracefully: %v", err)
+			server.Close()
 		}
 	}
 }
