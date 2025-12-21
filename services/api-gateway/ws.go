@@ -15,48 +15,50 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		http.Error(w, "Failed to upgrade to WebSocket", http.StatusInternalServerError)
-		return
-	}
-	defer conn.Close()
-
-	userID := r.URL.Query().Get("userID")
-	if userID == "" {
-		http.Error(w, "userID query parameter is required", http.StatusBadRequest)
-		return
-	}
-
-	// Handle driver WebSocket communication here
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			log.Printf("Error reading message: %v\n", err)
-			break
-		}
-		log.Printf("Received message from user %s: %s\n", userID, msg)
-	}
-}
-
 func handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		http.Error(w, "Failed to upgrade to WebSocket", http.StatusInternalServerError)
+		log.Printf("WebSocket upgrade failed: %v", err)
 		return
 	}
+
 	defer conn.Close()
 
 	userID := r.URL.Query().Get("userID")
 	if userID == "" {
-		http.Error(w, "userID query parameter is required", http.StatusBadRequest)
+		log.Println("No user ID provided")
+		return
+	}
+
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("Error reading message: %v", err)
+			break
+		}
+
+		log.Printf("Received message: %s", message)
+	}
+}
+
+func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("WebSocket upgrade failed: %v", err)
+		return
+	}
+
+	defer conn.Close()
+
+	userID := r.URL.Query().Get("userID")
+	if userID == "" {
+		log.Println("No user ID provided")
 		return
 	}
 
 	packageSlug := r.URL.Query().Get("packageSlug")
 	if packageSlug == "" {
-		http.Error(w, "packageSlug query parameter is required", http.StatusBadRequest)
+		log.Println("No package slug provided")
 		return
 	}
 
@@ -65,31 +67,32 @@ func handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
 		Name           string `json:"name"`
 		ProfilePicture string `json:"profilePicture"`
 		CarPlate       string `json:"carPlate"`
-		Package        string `json:"package"`
+		PackageSlug    string `json:"packageSlug"`
 	}
 
 	msg := contracts.WSMessage{
 		Type: "driver.cmd.register",
 		Data: Driver{
-			Id:             "driver-123",
-			Name:           "John Doe",
-			ProfilePicture: util.GetRandomAvatar(2),
-			CarPlate:       "XYZ-987",
-			Package:        packageSlug,
+			Id:             userID,
+			Name:           "Tiago",
+			ProfilePicture: util.GetRandomAvatar(1),
+			CarPlate:       "ABC123",
+			PackageSlug:    packageSlug,
 		},
 	}
 
 	if err := conn.WriteJSON(msg); err != nil {
-		log.Printf("Error sending initial message: %v\n", err)
+		log.Printf("Error sending message: %v", err)
 		return
 	}
-	// Handle rider WebSocket communication here
+
 	for {
-		_, msg, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Error reading message: %v\n", err)
+			log.Printf("Error reading message: %v", err)
 			break
 		}
-		log.Printf("Received message from user %s: %s\n", userID, msg)
+
+		log.Printf("Received message: %s", message)
 	}
 }
