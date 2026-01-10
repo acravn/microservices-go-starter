@@ -14,9 +14,7 @@ import (
 	grpcserver "google.golang.org/grpc"
 )
 
-var (
-	GrpcAddress = ":9093"
-)
+var GrpcAddr = ":9093"
 
 func main() {
 	inmemRepo := repository.NewInmemRepository()
@@ -24,7 +22,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
+	
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
@@ -32,26 +30,26 @@ func main() {
 		cancel()
 	}()
 
-	lis, err := net.Listen("tcp", GrpcAddress)
+	lis, err := net.Listen("tcp", GrpcAddr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcserver := grpcserver.NewServer()
+	// Starting the gRPC server
+	grpcServer := grpcserver.NewServer()
+	grpc.NewGRPCHandler(grpcServer, svc)
 
-	grpc.NewGRPCHandler(grpcserver, svc)
-
-	log.Printf("Starting gRPC server Trip Service on %v", lis.Addr())
+	log.Printf("Starting gRPC server Trip service on port %s", lis.Addr().String())
 
 	go func() {
-		if err := grpcserver.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Printf("failed to serve: %v", err)
 			cancel()
 		}
 	}()
 
-	// wait for shutdown signal
+	// wait for the shutdown signal
 	<-ctx.Done()
-	log.Println("Shutting down gRPC server Trip Service...")
-	grpcserver.GracefulStop()
+	log.Println("Shutting down the server...")
+	grpcServer.GracefulStop()
 }
