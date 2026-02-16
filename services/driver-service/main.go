@@ -16,7 +16,8 @@ import (
 var GrpcAddr = ":9092"
 
 func main() {
-	rabbitMqUri := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
+	rabbitMqURI := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -34,16 +35,25 @@ func main() {
 
 	svc := NewService()
 
-	// Connect to rabbitmq
-	conn, err := messaging.NewRabbitMQ(rabbitMqUri)
+	// RabbitMQ connection
+	rabbitmq, err := messaging.NewRabbitMQ(rabbitMqURI)
 	if err != nil {
-		log.Fatalf("failed to connect to RabbitMQ: %v", err)
+		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer rabbitmq.Close()
+
+	log.Println("Starting RabbitMQ connection")
 
 	// Starting the gRPC server
 	grpcServer := grpcserver.NewServer()
 	NewGrpcHandler(grpcServer, svc)
+
+	consumer := NewTripConsumer(rabbitmq)
+	go func() {
+		if err := consumer.Listen(); err != nil {
+			log.Fatalf("Failed to listen to the message: %v", err)
+		}
+	}()
 
 	log.Printf("Starting gRPC server Driver service on port %s", lis.Addr().String())
 
