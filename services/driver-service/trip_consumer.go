@@ -67,7 +67,9 @@ func (c *tripConsumer) handleFindAndNotifyDrivers(ctx context.Context, payload m
 		return nil
 	}
 
+	// Get a random index from the matching drivers
 	randomIndex := rand.Intn(len(suitableIDs))
+
 	suitableDriverID := suitableIDs[randomIndex]
 
 	marshalledEvent, err := json.Marshal(payload)

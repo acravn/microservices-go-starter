@@ -17,4 +17,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
 )
 
-require go.mongodb.org/mongo-driver v1.13.1
+require (
+	github.com/google/uuid v1.6.0
+	github.com/stripe/stripe-go/v81 v81.4.0
+	go.mongodb.org/mongo-driver v1.13.1
+)
